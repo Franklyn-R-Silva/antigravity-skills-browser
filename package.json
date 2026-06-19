@@ -1,0 +1,140 @@
+{
+  "name": "antigravity-skills-browser",
+  "displayName": "Antigravity Skills Browser",
+  "description": "Navegue 1600+ Antigravity Awesome Skills por categoria, busque, favorite e insira 'use @skill' no terminal com um clique. | Browse 1600+ Antigravity Awesome Skills by category.",
+  "version": "1.2.0",
+  "publisher": "Franklyn-R-Silva",
+  "author": {
+    "name": "Franklyn Roberto da Silva",
+    "url": "https://github.com/Franklyn-R-Silva"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Franklyn-R-Silva/antigravity-skills-browser"
+  },
+  "bugs": {
+    "url": "https://github.com/Franklyn-R-Silva/antigravity-skills-browser/issues"
+  },
+  "homepage": "https://github.com/Franklyn-R-Silva/antigravity-skills-browser#readme",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "antigravity",
+    "skills",
+    "agent",
+    "awesome",
+    "portugues"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "antigravitySkills",
+          "title": "Antigravity Skills",
+          "icon": "media/sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "antigravitySkills": [
+        {
+          "id": "antigravitySkillsView",
+          "name": "Skills",
+          "type": "webview",
+          "icon": "media/sidebar.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "antigravitySkills.useSkill",
+        "title": "Antigravity: Usar Skill no Terminal"
+      },
+      {
+        "command": "antigravitySkills.refresh",
+        "title": "Antigravity: Atualizar lista de skills",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "antigravitySkills.clearFavorites",
+        "title": "Antigravity: Limpar favoritos",
+        "icon": "$(clear-all)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "antigravitySkills.refresh",
+          "when": "view == antigravitySkillsView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "antigravitySkills.clearFavorites",
+          "when": "view == antigravitySkillsView",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Antigravity Skills Browser",
+      "properties": {
+        "antigravitySkills.template": {
+          "type": "string",
+          "default": "use @{name}",
+          "markdownDescription": "Texto inserido ao clicar numa skill. Use `{name}` como placeholder do nome da skill."
+        },
+        "antigravitySkills.sendNewline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Se ativado, executa o comando no terminal (aperta Enter) ao inserir. Por padrão apenas digita, sem executar."
+        },
+        "antigravitySkills.dataUrl": {
+          "type": "string",
+          "default": "https://sickn33.github.io/antigravity-awesome-skills/skills.json",
+          "description": "URL do JSON com a lista de skills. Usado ao atualizar."
+        },
+        "antigravitySkills.sortCategoriesByCount": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ordenar categorias por quantidade de skills (em vez de alfabeticamente). | Sort categories by skill count."
+        },
+        "antigravitySkills.language": {
+          "type": "string",
+          "enum": ["pt", "en"],
+          "default": "pt",
+          "description": "Idioma inicial da interface (também alternável pelo botão PT|EN no painel). | Initial UI language."
+        },
+        "antigravitySkills.explainTemplatePt": {
+          "type": "string",
+          "default": "Explique em português, de forma resumida, o que faz a skill @{name} e quando devo usá-la.",
+          "markdownDescription": "Prompt enviado ao agente ao clicar em **Explicar (PT)**. Use `{name}` para o nome da skill."
+        },
+        "antigravitySkills.explainTemplateEn": {
+          "type": "string",
+          "default": "Explain in English, briefly, what the @{name} skill does and when I should use it.",
+          "markdownDescription": "Prompt sent to the agent on **Explain (EN)**. Use `{name}` for the skill name."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.24.0"
+  }
+}

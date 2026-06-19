@@ -1,0 +1,24 @@
+# Dependências
+node_modules/
+
+# Artefatos de build da extensão
+*.vsix
+
+# Cache / saída de testes
+out/
+dist/
+.vscode-test/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.idea/
+*.swp
