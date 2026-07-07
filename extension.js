@@ -72,6 +72,9 @@ function normalize(list) {
       category: s.category || 'uncategorized',
       risk: s.risk || 'unknown',
       source: s.source || '',
+      path: s.path || '',
+      targets: s.plugin && s.plugin.targets ? s.plugin.targets : null,
+      setup: s.plugin && s.plugin.setup ? s.plugin.setup : null,
     }));
 }
 
@@ -106,8 +109,10 @@ function cfg() {
   return vscode.workspace.getConfiguration('antigravitySkills');
 }
 
-function renderTemplate(name) {
-  const tpl = cfg().get('template') || 'use @{name}';
+function renderTemplate(name, variant) {
+  const key = variant === 'plan' ? 'templatePlan' : 'template';
+  const fallback = variant === 'plan' ? 'use /{name} to plan a feature' : 'use /{name}';
+  const tpl = cfg().get(key) || fallback;
   return tpl.replace(/\{name\}/g, name);
 }
 
@@ -119,31 +124,58 @@ async function sendToTerminal(text) {
   term.sendText(text, !!sendNewline);
 }
 
-async function useSkill(skill) {
+async function useSkill(skill, variant) {
   if (!skill || !skill.name) return;
-  const text = renderTemplate(skill.name);
+  const text = renderTemplate(skill.name, variant);
   await sendToTerminal(text);
   vscode.window.setStatusBarMessage(`$(check) Inserido no terminal e copiado: ${text}`, 4000);
 }
 
-async function copySkill(skill) {
+async function copySkill(skill, variant) {
   if (!skill || !skill.name) return;
-  const text = renderTemplate(skill.name);
+  const text = renderTemplate(skill.name, variant);
   await vscode.env.clipboard.writeText(text);
   vscode.window.setStatusBarMessage(`$(copy) Copiado: ${text}`, 3000);
 }
 
-async function explainSkill(skill, lang) {
-  if (!skill || !skill.name) return;
+function explainPromptText(skill, lang) {
   const key = lang === 'en' ? 'explainTemplateEn' : 'explainTemplatePt';
   const tpl =
     cfg().get(key) ||
     (lang === 'en'
       ? 'Explain in English what the @{name} skill does.'
       : 'Explique em português o que faz a skill @{name}.');
-  const text = tpl.replace(/\{name\}/g, skill.name);
-  await sendToTerminal(text);
-  vscode.window.setStatusBarMessage(`$(comment-discussion) Pergunta enviada ao agente: ${text}`, 4000);
+  return tpl.replace(/\{name\}/g, skill.name);
+}
+
+// Explica a skill no idioma pedido. Prioriza o modelo nativo do host
+// (VS Code Language Model API) transmitindo a resposta pro painel; se não
+// houver modelo/API disponível, envia o prompt ao agente pelo terminal.
+async function explainInline(provider, skill, lang) {
+  if (!skill || !skill.name) return;
+  const prompt = explainPromptText(skill, lang);
+  try {
+    if (vscode.lm && typeof vscode.lm.selectChatModels === 'function') {
+      const models = await vscode.lm.selectChatModels();
+      if (models && models.length) {
+        const cts = new vscode.CancellationTokenSource();
+        const messages = [vscode.LanguageModelChatMessage.User(prompt)];
+        const resp = await models[0].sendRequest(messages, {}, cts.token);
+        let acc = '';
+        for await (const chunk of resp.text) {
+          acc += chunk;
+          provider.postExplain({ id: skill.id, lang, text: acc, done: false });
+        }
+        provider.postExplain({ id: skill.id, lang, text: acc, done: true });
+        return;
+      }
+    }
+  } catch (e) {
+    /* sem modelo nativo / sem permissão → cai pro fallback do terminal */
+  }
+  await sendToTerminal(prompt);
+  vscode.window.setStatusBarMessage(`$(comment-discussion) Pergunta enviada ao agente: ${prompt}`, 4000);
+  provider.postExplain({ id: skill.id, lang, mode: 'terminal' });
 }
 
 // ---------------------------------------------------------------------------
@@ -190,17 +222,17 @@ class SkillsViewProvider {
           break;
         case 'use': {
           const s = find(msg.id);
-          if (s) await useSkill(s);
+          if (s) await useSkill(s, msg.variant);
           break;
         }
         case 'copy': {
           const s = find(msg.id);
-          if (s) await copySkill(s);
+          if (s) await copySkill(s, msg.variant);
           break;
         }
         case 'explain': {
           const s = find(msg.id);
-          if (s) await explainSkill(s, msg.lang);
+          if (s) await explainInline(this, s, msg.lang);
           break;
         }
         case 'toggleFav': {
@@ -232,6 +264,10 @@ class SkillsViewProvider {
       sortByCount: !!cfg().get('sortCategoriesByCount'),
       lang: this.getLang(),
     });
+  }
+
+  postExplain(payload) {
+    if (this.view) this.view.webview.postMessage(Object.assign({ type: 'explain' }, payload));
   }
 
   _html(webview) {
@@ -292,6 +328,8 @@ class SkillsViewProvider {
   .btn:hover { background: var(--vscode-button-hoverBackground); }
   .btn.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
   .btnrow { margin-top:6px; }
+  .explainbox { margin-top:8px; padding:8px 10px; border:1px solid var(--vscode-panel-border); border-radius:4px; line-height:1.5; white-space:pre-wrap; font-size:12px; background: var(--vscode-textCodeBlock-background, transparent); }
+  .explainbox.note { opacity:.8; font-style:italic; }
   .linklike { background:none; border:none; color: var(--vscode-textLink-foreground); cursor:pointer; padding:0; font-size:12px; }
 </style>
 </head>
@@ -329,8 +367,12 @@ const T = {
     info: 'Detalhes', copy: 'Copiar', fav: 'Favoritar',
     back: 'Voltar', category: 'Categoria', risk: 'Risco', source: 'Fonte',
     descr: 'Descrição', noDescr: '(sem descrição)',
-    use: 'Usar no terminal', copyBtn: 'Copiar "use @"',
+    use: 'Usar no terminal', copyBtn: 'Copiar "use /"',
+    planBtn: 'Planejar feature', planHint: 'Insere "use /skill to plan a feature"',
+    compat: 'Compatibilidade', setup: 'Instalação', setupNone: 'Sem instalação necessária',
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
+    thinking: 'Pensando…',
+    sentToAgent: 'Pergunta enviada ao agente do Antigravity — veja a resposta no chat.',
     site: 'Ver no site de skills'
   },
   en: {
@@ -343,8 +385,12 @@ const T = {
     info: 'Details', copy: 'Copy', fav: 'Favorite',
     back: 'Back', category: 'Category', risk: 'Risk', source: 'Source',
     descr: 'Description', noDescr: '(no description)',
-    use: 'Use in terminal', copyBtn: 'Copy "use @"',
+    use: 'Use in terminal', copyBtn: 'Copy "use /"',
+    planBtn: 'Plan a feature', planHint: 'Inserts "use /skill to plan a feature"',
+    compat: 'Compatibility', setup: 'Setup', setupNone: 'No setup required',
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
+    thinking: 'Thinking…',
+    sentToAgent: 'Question sent to the Antigravity agent — see the reply in the chat.',
     site: 'View on skills site'
   }
 };
@@ -363,6 +409,8 @@ window.addEventListener('message', (ev) => {
     ALL = m.skills || []; FAVS = new Set(m.favorites || []);
     SORTBYCOUNT = !!m.sortByCount; LANG = m.lang === 'en' ? 'en' : 'pt';
     applyLangChrome(); render();
+  } else if (m.type === 'explain') {
+    renderExplain(m);
   }
 });
 
@@ -393,6 +441,7 @@ function rowHtml(s){
     + '</div>'
     + '<div class="actions">'
     + '<button class="iconbtn info" title="'+t().info+'">ℹ️</button>'
+    + '<button class="iconbtn plan" title="'+t().planHint+'">🧩</button>'
     + '<button class="iconbtn copy" title="'+t().copy+'">⧉</button>'
     + '</div>'
     + '<button class="iconbtn star'+on+'" title="'+t().fav+'" data-fav="'+esc(s.id)+'">'+star+'</button>'
@@ -433,13 +482,20 @@ function openDetail(s){
   CURRENT = s;
   dtitle.textContent = s.name;
   const tt = t();
+  const targets = s.targets ? Object.keys(s.targets).filter(k => s.targets[k] === 'supported') : [];
+  const setupTxt = s.setup && s.setup.summary
+    ? esc(s.setup.summary)
+    : (s.setup && s.setup.type && s.setup.type !== 'none' ? esc(s.setup.type) : tt.setupNone);
   dcontent.innerHTML =
       '<div class="dname">'+esc(s.name)+riskBadge(s.risk)+'</div>'
     + '<div class="dmeta">'+tt.category+': '+esc(s.category)+(s.source?('  •  '+tt.source+': '+esc(s.source)):'')+'</div>'
     + '<div class="dsec">'+tt.descr+'</div>'
     + '<div class="ddesc">'+(s.description?esc(s.description):tt.noDescr)+'</div>'
+    + (targets.length ? '<div class="dsec">'+tt.compat+'</div><div class="ddesc">'+targets.map(esc).join(' · ')+'</div>' : '')
+    + '<div class="dsec">'+tt.setup+'</div><div class="ddesc">'+setupTxt+'</div>'
     + '<div class="btnrow">'
     +   '<button class="btn" id="d-use">'+tt.use+'</button>'
+    +   '<button class="btn" id="d-plan">'+tt.planBtn+'</button>'
     +   '<button class="btn secondary" id="d-copy">'+tt.copyBtn+'</button>'
     + '</div>'
     + '<div class="dsec">'+ (LANG==='en'?'AI explanation':'Explicação por IA') +'</div>'
@@ -447,13 +503,30 @@ function openDetail(s){
     +   '<button class="btn" id="d-pt">'+tt.explainPt+'</button>'
     +   '<button class="btn" id="d-en">'+tt.explainEn+'</button>'
     + '</div>'
+    + '<div class="explainbox" id="d-explain" style="display:none"></div>'
     + '<div class="btnrow"><button class="linklike" id="d-site">'+tt.site+'</button></div>';
   detailEl.classList.add('open');
+  const ask = (lang) => {
+    const box = document.getElementById('d-explain');
+    if(box){ box.style.display='block'; box.className='explainbox'; box.textContent = t().thinking; }
+    api.postMessage({type:'explain', id:s.id, lang});
+  };
   document.getElementById('d-use').onclick  = () => api.postMessage({type:'use', id:s.id});
+  document.getElementById('d-plan').onclick = () => api.postMessage({type:'use', variant:'plan', id:s.id});
   document.getElementById('d-copy').onclick = () => api.postMessage({type:'copy', id:s.id});
-  document.getElementById('d-pt').onclick   = () => api.postMessage({type:'explain', id:s.id, lang:'pt'});
-  document.getElementById('d-en').onclick   = () => api.postMessage({type:'explain', id:s.id, lang:'en'});
+  document.getElementById('d-pt').onclick   = () => ask('pt');
+  document.getElementById('d-en').onclick   = () => ask('en');
   document.getElementById('d-site').onclick = () => api.postMessage({type:'openSite'});
+}
+
+function renderExplain(m){
+  if(!CURRENT || CURRENT.id !== m.id) return;
+  const box = document.getElementById('d-explain');
+  if(!box) return;
+  box.style.display='block';
+  if(m.mode === 'terminal'){ box.className='explainbox note'; box.textContent = t().sentToAgent; return; }
+  box.className='explainbox';
+  box.textContent = m.text || (m.done ? '' : t().thinking);
 }
 function reopenDetail(){ if(CURRENT){ const fresh = ALL.find(x=>x.id===CURRENT.id) || CURRENT; openDetail(fresh); } }
 
@@ -464,6 +537,8 @@ rootEl.addEventListener('click', (e) => {
   if(favBtn){ e.stopPropagation(); const id=favBtn.getAttribute('data-fav'); if(FAVS.has(id))FAVS.delete(id);else FAVS.add(id); api.postMessage({type:'toggleFav', id}); render(); return; }
   const infoBtn = e.target.closest('.info');
   if(infoBtn){ e.stopPropagation(); const id=infoBtn.closest('.row').getAttribute('data-id'); const s=ALL.find(x=>x.id===id); if(s) openDetail(s); return; }
+  const planBtn = e.target.closest('.plan');
+  if(planBtn){ e.stopPropagation(); api.postMessage({type:'use', variant:'plan', id: planBtn.closest('.row').getAttribute('data-id')}); return; }
   const copyBtn = e.target.closest('.copy');
   if(copyBtn){ e.stopPropagation(); api.postMessage({type:'copy', id: copyBtn.closest('.row').getAttribute('data-id')}); return; }
   const row = e.target.closest('.row');

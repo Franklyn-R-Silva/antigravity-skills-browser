@@ -4,3 +4,5 @@ scripts/**
 .gitignore
 **/*.map
 INSTALL.md
+CLAUDE.md
+.github/**

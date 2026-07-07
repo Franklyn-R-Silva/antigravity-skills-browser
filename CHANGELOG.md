@@ -1,65 +1,115 @@
 # Changelog
 
-Todas as mudanças relevantes desta extensão são documentadas aqui.
-O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
-e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
+🇧🇷 Todas as mudanças relevantes desta extensão são documentadas aqui.
+🇺🇸 All notable changes to this extension are documented here.
 
-## [Não lançado]
+O formato segue o / The format is based on
+[Keep a Changelog](https://keepachangelog.com/) · [Semantic Versioning](https://semver.org/).
 
-- _Nada por enquanto._
+## [1.3.0] - 2026-07-07
+
+### 🇧🇷 Português
+
+**Adicionado**
+- 🧩 Botão **Planejar feature** na lista e no painel de detalhes: insere
+  `use /skill to plan a feature` no terminal. Novo template configurável
+  `antigravitySkills.templatePlan`.
+- 🔌 **Compatibilidade** (codex/claude) e **Instalação** da skill exibidas no
+  painel de detalhes (dados já presentes no `skills.json`).
+
+**Alterado**
+- ✳️ Template padrão passou de `use @{name}` para **`use /{name}`** (invocação
+  por slash command).
+
+### 🇺🇸 English
+
+**Added**
+- 🧩 **Plan a feature** button in the list and detail panel: inserts
+  `use /skill to plan a feature` into the terminal. New configurable template
+  `antigravitySkills.templatePlan`.
+- 🔌 Skill **Compatibility** (codex/claude) and **Setup** shown in the detail
+  panel (data already present in `skills.json`).
+
+**Changed**
+- ✳️ Default template changed from `use @{name}` to **`use /{name}`** (slash
+  command invocation).
 
 ## [1.2.0] - 2026-06-19
 
-### Adicionado
+### 🇧🇷 Português
 
+**Adicionado**
 - 🎨 **Ícone/logo** da extensão (128×128) com tema *antigravity* (núcleo
-  brilhante + órbitas), exibido no marketplace e na lista de extensões.
-- 🌐 Botões **Explicar (PT)** / **Explain (EN)** no painel de detalhes: enviam
-  um prompt ao agente do Antigravity para explicar a skill no idioma escolhido.
-- ℹ️ **Painel de detalhes** por skill (nome, categoria, risco, fonte e
-  descrição completa) com ações de usar/copiar.
-- 🔀 **Toggle PT | EN** da interface, com idioma inicial configurável
-  (`antigravitySkills.language`).
-- ⚙️ Configurações `explainTemplatePt` e `explainTemplateEn` para customizar os
-  prompts de explicação.
-- 📄 README bilíngue (PT/EN) com instruções de publicação e arquivo `LICENSE`
-  (MIT).
+  brilhante + órbitas).
+- 🌐 Botões **Explicar (PT)** / **Explain (EN)** no painel de detalhes.
+- ℹ️ **Painel de detalhes** por skill (nome, categoria, risco, fonte e descrição).
+- 🔀 **Toggle PT | EN** da interface, com idioma inicial configurável.
+- ⚙️ Configurações `explainTemplatePt` e `explainTemplateEn`.
+- 📄 README bilíngue (PT/EN) e arquivo `LICENSE` (MIT).
 
-### Alterado
+**Alterado**
+- Metadados de publicação preenchidos para **Franklyn Roberto da Silva**.
 
-- Metadados de publicação (`author`, `publisher`, `repository`, `homepage`,
-  `galleryBanner`) preenchidos para o autor **Franklyn Roberto da Silva**.
+### 🇺🇸 English
+
+**Added**
+- 🎨 Extension **icon/logo** (128×128) with an *antigravity* theme.
+- 🌐 **Explicar (PT)** / **Explain (EN)** buttons in the detail panel.
+- ℹ️ Per-skill **detail panel** (name, category, risk, source and description).
+- 🔀 UI **PT | EN toggle**, with a configurable initial language.
+- ⚙️ `explainTemplatePt` and `explainTemplateEn` settings.
+- 📄 Bilingual README (PT/EN) and `LICENSE` file (MIT).
+
+**Changed**
+- Publishing metadata filled in for **Franklyn Roberto da Silva**.
 
 ## [1.1.0] - 2026-06-19
 
-### Adicionado
+### 🇧🇷 Português
 
-- 🔎 **Campo de busca fixo** no topo do painel, com filtro ao vivo por nome,
-  categoria e descrição (suporta múltiplas palavras).
-- ⭐ **Favoritos**: fixe skills numa seção no topo; persistem entre sessões.
-- 🗂️ Categorias **recolhíveis** com contador de skills.
-- 🏷️ **Badge de risco** (safe / medium / high / critical) por skill.
-- 🗑️ Comando **Limpar favoritos** no topo do painel.
+**Adicionado**
+- 🔎 **Campo de busca fixo** com filtro ao vivo (nome, categoria, descrição).
+- ⭐ **Favoritos** persistidos entre sessões.
+- 🗂️ Categorias **recolhíveis** com contador.
+- 🏷️ **Badge de risco** (safe / medium / high / critical).
+- 🗑️ Comando **Limpar favoritos**.
 
-### Alterado
+**Alterado**
+- Painel reescrito de TreeView nativa para **webview HTML**.
 
-- Painel reescrito de uma TreeView nativa para uma **webview HTML**, permitindo
-  busca sempre visível e layout customizado.
+### 🇺🇸 English
+
+**Added**
+- 🔎 Always-on **search box** with live filtering (name, category, description).
+- ⭐ **Favorites** persisted across sessions.
+- 🗂️ **Collapsible** categories with counters.
+- 🏷️ **Risk badge** (safe / medium / high / critical).
+- 🗑️ **Clear favorites** command.
+
+**Changed**
+- Panel rewritten from a native TreeView to an **HTML webview**.
 
 ## [1.0.0] - 2026-06-19
 
-### Adicionado
+### 🇧🇷 Português
 
+**Adicionado**
 - 🚀 Versão inicial: painel lateral com **1600+ Antigravity Awesome Skills**
   agrupadas por categoria.
-- 🖱️ Clique numa skill → digita `use @nome-da-skill` no terminal ativo (sem
-  executar) e copia para o clipboard.
-- 📦 `skills.json` embutido (funciona offline) com atualização em segundo plano
-  a partir do site oficial.
-- ⚙️ Configurações: `template`, `sendNewline`, `dataUrl`,
-  `sortCategoriesByCount`.
+- 🖱️ Clique numa skill → digita `use @nome-da-skill` no terminal e copia.
+- 📦 `skills.json` embutido (offline) com atualização em segundo plano.
+- ⚙️ Configurações: `template`, `sendNewline`, `dataUrl`, `sortCategoriesByCount`.
 
-[Não lançado]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/compare/v1.2.0...HEAD
+### 🇺🇸 English
+
+**Added**
+- 🚀 Initial release: sidebar panel with **1600+ Antigravity Awesome Skills**
+  grouped by category.
+- 🖱️ Click a skill → types `use @skill-name` into the terminal and copies it.
+- 📦 Bundled `skills.json` (offline) with background refresh.
+- ⚙️ Settings: `template`, `sendNewline`, `dataUrl`, `sortCategoriesByCount`.
+
+[1.3.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.0.0
