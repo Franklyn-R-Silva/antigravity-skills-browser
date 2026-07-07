@@ -2,7 +2,7 @@
   "name": "antigravity-skills-browser",
   "displayName": "Antigravity Skills Browser",
   "description": "Navegue 1600+ Antigravity Awesome Skills por categoria, busque, favorite e insira 'use @skill' no terminal com um clique. | Browse 1600+ Antigravity Awesome Skills by category.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "publisher": "Franklyn-R-Silva",
   "author": {
     "name": "Franklyn Roberto da Silva",
@@ -92,15 +92,48 @@
     "configuration": {
       "title": "Antigravity Skills Browser",
       "properties": {
+        "antigravitySkills.tool": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "cursor",
+            "gemini",
+            "codex",
+            "antigravity-ide",
+            "antigravity-cli",
+            "kiro-cli",
+            "kiro-ide",
+            "copilot",
+            "opencode",
+            "adal",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Claude Code — /skill",
+            "Cursor — @skill",
+            "Gemini CLI — Use skill",
+            "Codex CLI — Use skill",
+            "Antigravity IDE — Use @skill",
+            "Antigravity CLI (agy) — /skill",
+            "Kiro CLI — Use skill",
+            "Kiro IDE — Use @skill",
+            "GitHub Copilot — Ask Copilot to use skill",
+            "OpenCode — opencode run @skill",
+            "AdaL CLI — Use skill",
+            "Personalizado (usa template / templatePlan)"
+          ],
+          "default": "claude-code",
+          "markdownDescription": "Ferramenta de destino: define como a skill é invocada ao inserir no terminal (Claude Code usa `/`, Cursor usa `@`, etc.). Também alternável no painel de detalhes. Escolha `custom` para usar seus próprios `template` / `templatePlan`. | Target tool: sets how the skill is invoked."
+        },
         "antigravitySkills.template": {
           "type": "string",
           "default": "use /{name}",
-          "markdownDescription": "Texto inserido ao clicar numa skill. Use `{name}` como placeholder do nome da skill."
+          "markdownDescription": "Texto inserido ao clicar numa skill quando `tool` = `custom`. Use `{name}` como placeholder do nome da skill."
         },
         "antigravitySkills.templatePlan": {
           "type": "string",
           "default": "use /{name} to plan a feature",
-          "markdownDescription": "Texto inserido pelo botão **Planejar feature**. Use `{name}` como placeholder do nome da skill."
+          "markdownDescription": "Texto inserido pelo botão **Planejar feature** quando `tool` = `custom`. Use `{name}` como placeholder do nome da skill."
         },
         "antigravitySkills.sendNewline": {
           "type": "boolean",

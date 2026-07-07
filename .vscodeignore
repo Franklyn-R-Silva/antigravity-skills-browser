@@ -5,4 +5,5 @@ scripts/**
 **/*.map
 INSTALL.md
 CLAUDE.md
+DEVELOPMENT.md
 .github/**

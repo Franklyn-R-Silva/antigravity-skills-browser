@@ -109,10 +109,33 @@ function cfg() {
   return vscode.workspace.getConfiguration('antigravitySkills');
 }
 
+// Como cada ferramenta invoca uma skill (o texto digitado no terminal/chat).
+// `use` = clique normal; `plan` = botão "Planejar feature".
+const TOOL_PRESETS = {
+  'claude-code':     { use: '/{name}',                   plan: '/{name} help me plan a feature' },
+  'cursor':          { use: '@{name}',                   plan: '@{name} help me plan a feature' },
+  'gemini':          { use: 'Use {name}',                plan: 'Use {name} to plan a feature' },
+  'codex':           { use: 'Use {name}',                plan: 'Use {name} to plan a feature' },
+  'antigravity-ide': { use: 'Use @{name}',               plan: 'Use @{name} to plan a feature' },
+  'antigravity-cli': { use: '/{name}',                   plan: '/{name} help me plan a feature' },
+  'kiro-cli':        { use: 'Use {name}',                plan: 'Use {name} to plan a feature' },
+  'kiro-ide':        { use: 'Use @{name}',               plan: 'Use @{name} to plan a feature' },
+  'copilot':         { use: 'Ask Copilot to use {name}', plan: 'Ask Copilot to use {name} to plan a feature' },
+  'opencode':        { use: 'opencode run @{name}',      plan: 'opencode run @{name} help me plan a feature' },
+  'adal':            { use: 'Use {name}',                plan: 'Use {name} to plan a feature' },
+};
+
 function renderTemplate(name, variant) {
-  const key = variant === 'plan' ? 'templatePlan' : 'template';
-  const fallback = variant === 'plan' ? 'use /{name} to plan a feature' : 'use /{name}';
-  const tpl = cfg().get(key) || fallback;
+  const tool = provider ? provider.getTool() : cfg().get('tool') || 'claude-code';
+  const preset = TOOL_PRESETS[tool];
+  let tpl;
+  if (tool === 'custom' || !preset) {
+    const key = variant === 'plan' ? 'templatePlan' : 'template';
+    const fallback = variant === 'plan' ? 'use /{name} to plan a feature' : 'use /{name}';
+    tpl = cfg().get(key) || fallback;
+  } else {
+    tpl = variant === 'plan' ? preset.plan : preset.use;
+  }
   return tpl.replace(/\{name\}/g, name);
 }
 
@@ -207,6 +230,12 @@ class SkillsViewProvider {
   async setLang(lang) {
     await this.context.globalState.update('antigravitySkills.lang', lang);
   }
+  getTool() {
+    return this.context.globalState.get('antigravitySkills.tool', cfg().get('tool') || 'claude-code');
+  }
+  async setTool(tool) {
+    await this.context.globalState.update('antigravitySkills.tool', tool);
+  }
 
   resolveWebviewView(webviewView) {
     this.view = webviewView;
@@ -246,6 +275,10 @@ class SkillsViewProvider {
         case 'setLang':
           await this.setLang(msg.lang === 'en' ? 'en' : 'pt');
           break;
+        case 'setTool':
+          await this.setTool(msg.tool);
+          this.postData();
+          break;
         case 'openSite':
           vscode.env.openExternal(vscode.Uri.parse(SITE_URL));
           break;
@@ -257,12 +290,20 @@ class SkillsViewProvider {
 
   postData() {
     if (!this.view) return;
+    const presets = Object.assign({}, TOOL_PRESETS, {
+      custom: {
+        use: cfg().get('template') || 'use /{name}',
+        plan: cfg().get('templatePlan') || 'use /{name} to plan a feature',
+      },
+    });
     this.view.webview.postMessage({
       type: 'data',
       skills: SKILLS,
       favorites: this.getFavorites(),
       sortByCount: !!cfg().get('sortCategoriesByCount'),
       lang: this.getLang(),
+      tool: this.getTool(),
+      presets,
     });
   }
 
@@ -328,6 +369,9 @@ class SkillsViewProvider {
   .btn:hover { background: var(--vscode-button-hoverBackground); }
   .btn.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
   .btnrow { margin-top:6px; }
+  .dselect { width:100%; box-sizing:border-box; margin-top:4px; padding:5px 6px; border-radius:4px; border:1px solid var(--vscode-dropdown-border, var(--vscode-panel-border)); background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); }
+  .preview { margin-top:6px; font-family: var(--vscode-editor-font-family, monospace); font-size:12px; padding:6px 8px; border-radius:4px; background: var(--vscode-textCodeBlock-background, rgba(127,127,127,.1)); white-space:pre-wrap; word-break:break-word; }
+  .preview .lbl { opacity:.55; font-family: var(--vscode-font-family); font-size:10px; text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:2px; }
   .explainbox { margin-top:8px; padding:8px 10px; border:1px solid var(--vscode-panel-border); border-radius:4px; line-height:1.5; white-space:pre-wrap; font-size:12px; background: var(--vscode-textCodeBlock-background, transparent); }
   .explainbox.note { opacity:.8; font-style:italic; }
   .linklike { background:none; border:none; color: var(--vscode-textLink-foreground); cursor:pointer; padding:0; font-size:12px; }
@@ -354,6 +398,13 @@ class SkillsViewProvider {
 <script nonce="${n}">
 const api = acquireVsCodeApi();
 let ALL = [], FAVS = new Set(), SORTBYCOUNT = false, LANG = 'pt';
+let TOOL = 'claude-code', PRESETS = {};
+const TOOLS = [
+  ['claude-code','Claude Code'], ['cursor','Cursor'], ['gemini','Gemini CLI'],
+  ['codex','Codex CLI'], ['antigravity-ide','Antigravity IDE'], ['antigravity-cli','Antigravity CLI (agy)'],
+  ['kiro-cli','Kiro CLI'], ['kiro-ide','Kiro IDE'], ['copilot','GitHub Copilot'],
+  ['opencode','OpenCode'], ['adal','AdaL CLI'], ['custom','Custom']
+];
 const collapsed = new Set();
 
 const T = {
@@ -370,6 +421,7 @@ const T = {
     use: 'Usar no terminal', copyBtn: 'Copiar "use /"',
     planBtn: 'Planejar feature', planHint: 'Insere "use /skill to plan a feature"',
     compat: 'Compatibilidade', setup: 'Instalação', setupNone: 'Sem instalação necessária',
+    tool: 'Ferramenta', toolHint: 'Como a skill é inserida no terminal', preview: 'Será inserido',
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
     thinking: 'Pensando…',
     sentToAgent: 'Pergunta enviada ao agente do Antigravity — veja a resposta no chat.',
@@ -388,6 +440,7 @@ const T = {
     use: 'Use in terminal', copyBtn: 'Copy "use /"',
     planBtn: 'Plan a feature', planHint: 'Inserts "use /skill to plan a feature"',
     compat: 'Compatibility', setup: 'Setup', setupNone: 'No setup required',
+    tool: 'Tool', toolHint: 'How the skill is inserted in the terminal', preview: 'Will insert',
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
     thinking: 'Thinking…',
     sentToAgent: 'Question sent to the Antigravity agent — see the reply in the chat.',
@@ -408,7 +461,8 @@ window.addEventListener('message', (ev) => {
   if (m.type === 'data') {
     ALL = m.skills || []; FAVS = new Set(m.favorites || []);
     SORTBYCOUNT = !!m.sortByCount; LANG = m.lang === 'en' ? 'en' : 'pt';
-    applyLangChrome(); render();
+    TOOL = m.tool || 'claude-code'; PRESETS = m.presets || {};
+    applyLangChrome(); render(); if(detailEl.classList.contains('open')) reopenDetail();
   } else if (m.type === 'explain') {
     renderExplain(m);
   }
@@ -493,6 +547,11 @@ function openDetail(s){
     + '<div class="ddesc">'+(s.description?esc(s.description):tt.noDescr)+'</div>'
     + (targets.length ? '<div class="dsec">'+tt.compat+'</div><div class="ddesc">'+targets.map(esc).join(' · ')+'</div>' : '')
     + '<div class="dsec">'+tt.setup+'</div><div class="ddesc">'+setupTxt+'</div>'
+    + '<div class="dsec">'+tt.tool+'</div>'
+    + '<select class="dselect" id="d-tool" title="'+tt.toolHint+'">'
+    +   TOOLS.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===TOOL?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')
+    + '</select>'
+    + '<div class="preview" id="d-preview"></div>'
     + '<div class="btnrow">'
     +   '<button class="btn" id="d-use">'+tt.use+'</button>'
     +   '<button class="btn" id="d-plan">'+tt.planBtn+'</button>'
@@ -506,17 +565,29 @@ function openDetail(s){
     + '<div class="explainbox" id="d-explain" style="display:none"></div>'
     + '<div class="btnrow"><button class="linklike" id="d-site">'+tt.site+'</button></div>';
   detailEl.classList.add('open');
+  updatePreview(s);
   const ask = (lang) => {
     const box = document.getElementById('d-explain');
     if(box){ box.style.display='block'; box.className='explainbox'; box.textContent = t().thinking; }
     api.postMessage({type:'explain', id:s.id, lang});
   };
+  document.getElementById('d-tool').onchange = (e) => { TOOL = e.target.value; updatePreview(s); api.postMessage({type:'setTool', tool:TOOL}); };
   document.getElementById('d-use').onclick  = () => api.postMessage({type:'use', id:s.id});
   document.getElementById('d-plan').onclick = () => api.postMessage({type:'use', variant:'plan', id:s.id});
   document.getElementById('d-copy').onclick = () => api.postMessage({type:'copy', id:s.id});
   document.getElementById('d-pt').onclick   = () => ask('pt');
   document.getElementById('d-en').onclick   = () => ask('en');
   document.getElementById('d-site').onclick = () => api.postMessage({type:'openSite'});
+}
+
+function fillTpl(tpl, name){ return (tpl||'').replace(/\\{name\\}/g, name); }
+function updatePreview(s){
+  const box = document.getElementById('d-preview');
+  if(!box) return;
+  const p = PRESETS[TOOL] || PRESETS['custom'] || { use:'use /{name}', plan:'use /{name} to plan a feature' };
+  const tt = t();
+  box.innerHTML = '<span class="lbl">'+tt.preview+'</span>'
+    + esc(fillTpl(p.use, s.name)) + '\\n' + esc(fillTpl(p.plan, s.name));
 }
 
 function renderExplain(m){

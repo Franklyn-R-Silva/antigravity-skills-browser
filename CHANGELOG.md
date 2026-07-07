@@ -6,6 +6,37 @@
 O formato segue o / The format is based on
 [Keep a Changelog](https://keepachangelog.com/) · [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-07-07
+
+### 🇧🇷 Português
+
+**Adicionado**
+- 🛠️ **Presets por ferramenta** (`antigravitySkills.tool`): o texto inserido se
+  adapta à ferramenta — Claude Code (`/skill`), Cursor (`@skill`), Antigravity
+  IDE (`Use @skill`), Gemini/Codex/Kiro/AdaL (`Use skill`), Copilot, OpenCode e
+  `custom`. Seletor no painel de detalhes com **preview** do texto exato inserido.
+
+**Alterado**
+- ✳️ A invocação padrão passa a depender da ferramenta escolhida (padrão
+  **Claude Code = `/skill`**). `template` / `templatePlan` agora valem quando
+  `tool` = `custom`.
+- 📄 README **focado no app** (o que aparece na loja); build/empacotamento/
+  publicação movidos para o novo **`DEVELOPMENT.md`**.
+
+### 🇺🇸 English
+
+**Added**
+- 🛠️ **Per-tool presets** (`antigravitySkills.tool`): the inserted text adapts to
+  the tool — Claude Code (`/skill`), Cursor (`@skill`), Antigravity IDE
+  (`Use @skill`), Gemini/Codex/Kiro/AdaL (`Use skill`), Copilot, OpenCode and
+  `custom`. Detail-panel selector with a **preview** of the exact inserted text.
+
+**Changed**
+- ✳️ Default invocation now depends on the chosen tool (default **Claude Code =
+  `/skill`**). `template` / `templatePlan` apply when `tool` = `custom`.
+- 📄 README **focused on the app** (store page); build/packaging/publishing moved
+  to the new **`DEVELOPMENT.md`**.
+
 ## [1.3.0] - 2026-07-07
 
 ### 🇧🇷 Português
