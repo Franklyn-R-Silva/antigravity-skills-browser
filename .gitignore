@@ -22,3 +22,6 @@ desktop.ini
 # Editores
 .idea/
 *.swp
+
+# Terminal Paste Image folder
+.cp-images/

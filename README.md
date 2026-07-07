@@ -104,6 +104,10 @@ Fonte dos dados / Data source: <https://sickn33.github.io/antigravity-awesome-sk
 
 Autor / Author: **Franklyn Roberto da Silva** — [@Franklyn-R-Silva](https://github.com/Franklyn-R-Silva)
 
+Contribuições são bem-vindas! Veja [`CONTRIBUTING.md`](CONTRIBUTING.md) ·
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) · [`SECURITY.md`](SECURITY.md).
+Contributions welcome — see the same files.
+
 Build, empacotamento e publicação: veja [`DEVELOPMENT.md`](DEVELOPMENT.md).
 Build, packaging and publishing: see [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
