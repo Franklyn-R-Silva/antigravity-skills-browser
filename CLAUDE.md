@@ -71,9 +71,10 @@ Everything lives in **`extension.js`** (~500 lines), split into commented sectio
   - webview -> host message types: `ready`, `use` (optional `variant:'plan'`), `copy`,
     `explain`, `translate`, `toggleFav`, `setLang`, `setTool`, `openSite`
   - host -> webview: `data` (skills + favorites + sortByCount + lang + tool + presets +
-    translations), `explain` (streamed explanation chunks / terminal-fallback note) and
-    `translated` (streamed PT translation of a skill description; `mode:'unavailable'`
-    when no `vscode.lm` model is present — no terminal fallback)
+    translations + ptDescriptions), `explain` (streamed explanation chunks /
+    terminal-fallback note) and `translated` (streamed PT translation of a skill
+    description; `mode:'unavailable'` when no `vscode.lm` model is present — no
+    terminal fallback)
   - Favorites and language persist in `context.globalState`; skill filtering/rendering
     happens entirely client-side in the webview script.
 
@@ -86,3 +87,11 @@ table in the webview script.
 
 Skills come from <https://sickn33.github.io/antigravity-awesome-skills> (`skills.json`).
 The bundled `skills.json` is the offline fallback and is shipped in the `.vsix`.
+
+`skills-pt.json` is a bundled map `{ id: pt-BR description }` covering every skill in
+`skills.json`. It is loaded by `loadPtDescriptions` and shipped to the webview as
+`ptDescriptions`; in PT mode the webview shows these instead of the English/Spanish
+original (with a toggle). It is a static, pre-translated file — regenerate it if
+`skills.json` gains new ids (missing ids just fall back to the original text, or the
+`vscode.lm` on-demand path). Category display names are translated separately by a
+static `CATPT` map inside the webview (keys stay English for filtering).

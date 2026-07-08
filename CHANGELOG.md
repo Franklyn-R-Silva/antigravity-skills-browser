@@ -5,6 +5,41 @@ All notable changes to this extension are documented here.
 The format is based on
 [Keep a Changelog](https://keepachangelog.com/) · [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-07-08
+
+**Changed**
+- 🎨 **UI/UX redesign** of the sidebar webview: search box with a leading icon
+  and focus ring, refined language toggle, category filter and collapse/expand
+  control; category headers with a count chip and hover accent; roomier skill
+  rows with cleaner typography; pill-style risk badges; a restyled detail panel
+  (metadata chips, clearer section headers, full-width action buttons, subtle
+  slide-in). Uses design tokens (`--sp`, `--r`, accent, muted) and `color-mix`.
+
+**Verified**
+- ✅ Reviewed all 1646 Portuguese descriptions for completeness (no
+  English-prose entries remain; residual English is proper nouns / product
+  names / SDK identifiers only).
+
+## [1.6.0] - 2026-07-08
+
+**Added**
+- 🇧🇷 **Offline Portuguese descriptions**: all ~1646 skill descriptions are
+  pre-translated to Brazilian Portuguese and bundled in `skills-pt.json`. In PT
+  mode they show automatically (in the list and detail panel) with no dependency
+  on a host AI model. A toggle switches between the PT translation and the
+  original (EN/ES). The `vscode.lm` on-demand path remains a fallback for skills
+  missing from the bundle.
+- 🗂️ **Translated category names** in PT mode (group headers and the category
+  filter), via a static label map; the internal category key stays English.
+- ↔️ **Inline expand/collapse** button on each skill row to reveal the full
+  description without opening the detail panel.
+- 🔗 The detail-panel **site link now opens the specific skill page**
+  (`…/skill/<id>`) instead of the site home.
+
+**Changed**
+- 🔎 Search now also matches the Portuguese description and translated category
+  label.
+
 ## [1.5.0] - 2026-07-08
 
 **Added**
@@ -85,6 +120,8 @@ The format is based on
 - 📦 Bundled `skills.json` (offline) with background refresh.
 - ⚙️ Settings: `template`, `sendNewline`, `dataUrl`, `sortCategoriesByCount`.
 
+[1.7.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.7.0
+[1.6.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.6.0
 [1.5.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.5.0
 [1.4.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Franklyn-R-Silva/antigravity-skills-browser/releases/tag/v1.3.0
