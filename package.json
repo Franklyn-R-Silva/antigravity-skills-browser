@@ -2,7 +2,7 @@
   "name": "antigravity-skills-browser",
   "displayName": "Antigravity Skills Browser",
   "description": "Navegue 1600+ Antigravity Awesome Skills por categoria, busque, favorite e insira 'use @skill' no terminal com um clique. | Browse 1600+ Antigravity Awesome Skills by category.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "publisher": "Franklyn-R-Silva",
   "author": {
     "name": "Franklyn Roberto da Silva",
@@ -73,6 +73,16 @@
         "command": "antigravitySkills.clearFavorites",
         "title": "Antigravity: Limpar favoritos",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "antigravitySkills.openSite",
+        "title": "Antigravity: Abrir site de skills",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "antigravitySkills.openRepo",
+        "title": "Antigravity: Abrir repositório no GitHub",
+        "icon": "$(github)"
       }
     ],
     "menus": {
@@ -86,6 +96,16 @@
           "command": "antigravitySkills.clearFavorites",
           "when": "view == antigravitySkillsView",
           "group": "navigation@2"
+        },
+        {
+          "command": "antigravitySkills.openSite",
+          "when": "view == antigravitySkillsView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "antigravitySkills.openRepo",
+          "when": "view == antigravitySkillsView",
+          "group": "navigation@4"
         }
       ]
     },

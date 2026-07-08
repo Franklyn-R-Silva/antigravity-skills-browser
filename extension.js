@@ -3,7 +3,8 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const SITE_URL = 'https://sickn33.github.io/antigravity-awesome-skills';
+const SITE_URL = 'https://sickn33.github.io/antigravity-awesome-skills/';
+const REPO_URL = 'https://github.com/sickn33/antigravity-awesome-skills';
 
 /** @type {Array<any>} */
 let SKILLS = [];
@@ -109,8 +110,8 @@ function cfg() {
   return vscode.workspace.getConfiguration('antigravitySkills');
 }
 
-// Como cada ferramenta invoca uma skill (o texto digitado no terminal/chat).
-// `use` = clique normal; `plan` = botão "Planejar feature".
+// How each tool invokes a skill (the text typed into the terminal/chat).
+// `use` = normal click; `plan` = "Plan a feature" button.
 const TOOL_PRESETS = {
   'claude-code':     { use: '/{name}',                   plan: '/{name} help me plan a feature' },
   'cursor':          { use: '@{name}',                   plan: '@{name} help me plan a feature' },
@@ -171,9 +172,9 @@ function explainPromptText(skill, lang) {
   return tpl.replace(/\{name\}/g, skill.name);
 }
 
-// Explica a skill no idioma pedido. Prioriza o modelo nativo do host
-// (VS Code Language Model API) transmitindo a resposta pro painel; se não
-// houver modelo/API disponível, envia o prompt ao agente pelo terminal.
+// Explains the skill in the requested language. Prefers the host's native model
+// (VS Code Language Model API), streaming the answer into the panel; if no
+// model/API is available, it sends the prompt to the agent via the terminal.
 async function explainInline(provider, skill, lang) {
   if (!skill || !skill.name) return;
   const prompt = explainPromptText(skill, lang);
@@ -194,11 +195,50 @@ async function explainInline(provider, skill, lang) {
       }
     }
   } catch (e) {
-    /* sem modelo nativo / sem permissão → cai pro fallback do terminal */
+    /* no native model / no permission → fall back to the terminal */
   }
   await sendToTerminal(prompt);
   vscode.window.setStatusBarMessage(`$(comment-discussion) Pergunta enviada ao agente: ${prompt}`, 4000);
   provider.postExplain({ id: skill.id, lang, mode: 'terminal' });
+}
+
+// Translates the skill description to PT using the editor's native model
+// (VS Code Language Model API), streaming it and caching the result.
+// Unlike explainInline, there is no terminal fallback: if no model is
+// available, it tells the webview that AI translation is unavailable.
+async function translateInline(provider, skill) {
+  if (!skill || !skill.name || !skill.description) return;
+  const cached = provider.getTranslations()[skill.id];
+  if (cached) {
+    provider.postTranslated({ id: skill.id, text: cached, done: true });
+    return;
+  }
+  const prompt =
+    'Traduza para português do Brasil, de forma natural e concisa, APENAS o texto a ' +
+    'seguir. Não adicione aspas, comentários nem o texto original:\n\n' +
+    skill.description;
+  try {
+    if (vscode.lm && typeof vscode.lm.selectChatModels === 'function') {
+      const models = await vscode.lm.selectChatModels();
+      if (models && models.length) {
+        const cts = new vscode.CancellationTokenSource();
+        const messages = [vscode.LanguageModelChatMessage.User(prompt)];
+        const resp = await models[0].sendRequest(messages, {}, cts.token);
+        let acc = '';
+        for await (const chunk of resp.text) {
+          acc += chunk;
+          provider.postTranslated({ id: skill.id, text: acc, done: false });
+        }
+        acc = acc.trim();
+        if (acc) await provider.setTranslation(skill.id, acc);
+        provider.postTranslated({ id: skill.id, text: acc, done: true });
+        return;
+      }
+    }
+  } catch (e) {
+    /* no native model / no permission → report unavailability */
+  }
+  provider.postTranslated({ id: skill.id, mode: 'unavailable' });
 }
 
 // ---------------------------------------------------------------------------
@@ -236,6 +276,17 @@ class SkillsViewProvider {
   async setTool(tool) {
     await this.context.globalState.update('antigravitySkills.tool', tool);
   }
+  getTranslations() {
+    return this.context.globalState.get('antigravitySkills.translations', {});
+  }
+  async setTranslation(id, text) {
+    const all = this.getTranslations();
+    all[id] = text;
+    await this.context.globalState.update('antigravitySkills.translations', all);
+  }
+  postTranslated(payload) {
+    if (this.view) this.view.webview.postMessage(Object.assign({ type: 'translated' }, payload));
+  }
 
   resolveWebviewView(webviewView) {
     this.view = webviewView;
@@ -264,6 +315,11 @@ class SkillsViewProvider {
           if (s) await explainInline(this, s, msg.lang);
           break;
         }
+        case 'translate': {
+          const s = find(msg.id);
+          if (s) await translateInline(this, s);
+          break;
+        }
         case 'toggleFav': {
           const favs = new Set(this.getFavorites());
           if (favs.has(msg.id)) favs.delete(msg.id);
@@ -281,6 +337,9 @@ class SkillsViewProvider {
           break;
         case 'openSite':
           vscode.env.openExternal(vscode.Uri.parse(SITE_URL));
+          break;
+        case 'openRepo':
+          vscode.env.openExternal(vscode.Uri.parse(REPO_URL));
           break;
       }
     });
@@ -304,6 +363,7 @@ class SkillsViewProvider {
       lang: this.getLang(),
       tool: this.getTool(),
       presets,
+      translations: this.getTranslations(),
     });
   }
 
@@ -329,8 +389,12 @@ class SkillsViewProvider {
   .langtoggle { display:flex; border:1px solid var(--vscode-panel-border); border-radius:4px; overflow:hidden; }
   .langtoggle button { background:transparent; color:var(--vscode-foreground); border:none; padding:5px 8px; cursor:pointer; font-size:11px; }
   .langtoggle button.active { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+  .toolbar2 { position: sticky; top:49px; z-index:4; background: var(--vscode-sideBar-background); padding:6px 8px; border-bottom:1px solid var(--vscode-panel-border); display:flex; gap:6px; align-items:center; }
+  #cat { flex:1; min-width:0; box-sizing:border-box; padding:5px 6px; border-radius:4px; border:1px solid var(--vscode-dropdown-border, var(--vscode-panel-border)); background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); }
+  .tbtn { flex:none; white-space:nowrap; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border:none; padding:5px 9px; border-radius:4px; cursor:pointer; font-size:11px; }
+  .tbtn:hover { background: var(--vscode-button-hoverBackground); }
   .count { padding:4px 8px 2px; font-size:11px; opacity:.7; }
-  .group > .ghead { display:flex; align-items:center; gap:6px; padding:5px 8px; cursor:pointer; user-select:none; font-weight:600; position:sticky; top:49px; background:var(--vscode-sideBar-background); }
+  .group > .ghead { display:flex; align-items:center; gap:6px; padding:5px 8px; cursor:pointer; user-select:none; font-weight:600; position:sticky; top:82px; background:var(--vscode-sideBar-background); }
   .group > .ghead:hover { background: var(--vscode-list-hoverBackground); }
   .group .gcount { opacity:.55; font-weight:400; font-size:11px; }
   .chev { transition: transform .12s; display:inline-block; }
@@ -384,6 +448,10 @@ class SkillsViewProvider {
       <button id="langpt">PT</button><button id="langen">EN</button>
     </div>
   </div>
+  <div class="toolbar2">
+    <select id="cat" title="Categoria"></select>
+    <button id="toggleAll" class="tbtn"></button>
+  </div>
   <div class="count" id="count"></div>
   <div id="root"><div class="empty">…</div></div>
 
@@ -399,6 +467,9 @@ class SkillsViewProvider {
 const api = acquireVsCodeApi();
 let ALL = [], FAVS = new Set(), SORTBYCOUNT = false, LANG = 'pt';
 let TOOL = 'claude-code', PRESETS = {};
+let TRANS = {};        // { id: cached translated description }
+let CATFILTER = '';    // category selected in the filter ('' = all)
+let LAST_CATS = [];    // categories rendered last (for collapse/expand all)
 const TOOLS = [
   ['claude-code','Claude Code'], ['cursor','Cursor'], ['gemini','Gemini CLI'],
   ['codex','Codex CLI'], ['antigravity-ide','Antigravity IDE'], ['antigravity-cli','Antigravity CLI (agy)'],
@@ -425,7 +496,12 @@ const T = {
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
     thinking: 'Pensando…',
     sentToAgent: 'Pergunta enviada ao agente do Antigravity — veja a resposta no chat.',
-    site: 'Ver no site de skills'
+    site: 'Ver no site de skills',
+    allCats: 'Todas as categorias', collapseAll: 'Recolher tudo', expandAll: 'Expandir tudo',
+    translate: '🌐 Traduzir descrição (PT)', translating: 'Traduzindo…',
+    showOriginal: '↩ Ver original (EN)', showTranslation: '🌐 Ver tradução (PT)',
+    translateUnavailable: 'Tradução por IA indisponível neste host.',
+    repo: 'Ver repositório no GitHub'
   },
   en: {
     search: 'Search skill by name, category or description…',
@@ -444,12 +520,19 @@ const T = {
     explainPt: 'Explicar (PT)', explainEn: 'Explain (EN)',
     thinking: 'Thinking…',
     sentToAgent: 'Question sent to the Antigravity agent — see the reply in the chat.',
-    site: 'View on skills site'
+    site: 'View on skills site',
+    allCats: 'All categories', collapseAll: 'Collapse all', expandAll: 'Expand all',
+    translate: '🌐 Translate to PT', translating: 'Translating…',
+    showOriginal: '↩ Show original (EN)', showTranslation: '🌐 Show translation (PT)',
+    translateUnavailable: 'AI translation unavailable in this host.',
+    repo: 'View repository on GitHub'
   }
 };
 function t(){ return T[LANG] || T.pt; }
 
 const qEl = document.getElementById('q');
+const catEl = document.getElementById('cat');
+const toggleAllEl = document.getElementById('toggleAll');
 const rootEl = document.getElementById('root');
 const countEl = document.getElementById('count');
 const detailEl = document.getElementById('detail');
@@ -462,24 +545,47 @@ window.addEventListener('message', (ev) => {
     ALL = m.skills || []; FAVS = new Set(m.favorites || []);
     SORTBYCOUNT = !!m.sortByCount; LANG = m.lang === 'en' ? 'en' : 'pt';
     TOOL = m.tool || 'claude-code'; PRESETS = m.presets || {};
-    applyLangChrome(); render(); if(detailEl.classList.contains('open')) reopenDetail();
+    TRANS = m.translations || {};
+    if(CATFILTER && !ALL.some(s => s.category === CATFILTER)) CATFILTER = '';
+    applyLangChrome(); buildCatOptions(); render();
+    if(detailEl.classList.contains('open')) reopenDetail();
   } else if (m.type === 'explain') {
     renderExplain(m);
+  } else if (m.type === 'translated') {
+    renderTranslated(m);
   }
 });
 
 function applyLangChrome(){
   qEl.placeholder = t().search;
+  catEl.title = t().category;
   document.getElementById('langpt').classList.toggle('active', LANG==='pt');
   document.getElementById('langen').classList.toggle('active', LANG==='en');
 }
 
+// Fills the category filter with counts, preserving the current selection.
+function buildCatOptions(){
+  const counts = new Map();
+  for(const s of ALL) counts.set(s.category, (counts.get(s.category)||0)+1);
+  const cats = [...counts.keys()].sort((a,b)=>a.localeCompare(b));
+  catEl.innerHTML = '<option value="">'+esc(t().allCats)+' ('+ALL.length+')</option>'
+    + cats.map(c => '<option value="'+esc(c)+'"'+(c===CATFILTER?' selected':'')+'>'+esc(c)+' ('+counts.get(c)+')</option>').join('');
+}
+
 qEl.addEventListener('input', render);
+catEl.addEventListener('change', () => { CATFILTER = catEl.value; render(); });
+toggleAllEl.addEventListener('click', () => {
+  const anyOpen = LAST_CATS.some(c => !collapsed.has(c));
+  if(anyOpen) LAST_CATS.forEach(c => collapsed.add(c));
+  else LAST_CATS.forEach(c => collapsed.delete(c));
+  render();
+});
 document.getElementById('langpt').addEventListener('click', () => setLang('pt'));
 document.getElementById('langen').addEventListener('click', () => setLang('en'));
 document.getElementById('dback').addEventListener('click', () => detailEl.classList.remove('open'));
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && detailEl.classList.contains('open')) detailEl.classList.remove('open'); });
 
-function setLang(l){ LANG = l; api.postMessage({type:'setLang', lang:l}); applyLangChrome(); render(); if(detailEl.classList.contains('open')) reopenDetail(); }
+function setLang(l){ LANG = l; api.postMessage({type:'setLang', lang:l}); applyLangChrome(); buildCatOptions(); render(); if(detailEl.classList.contains('open')) reopenDetail(); }
 
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function matches(s,q){ if(!q) return true; const hay=(s.name+' '+s.category+' '+s.description).toLowerCase(); return q.split(/\\s+/).every(t=>hay.includes(t)); }
@@ -504,10 +610,10 @@ function rowHtml(s){
 
 function render(){
   const q = qEl.value.trim().toLowerCase();
-  const filtered = ALL.filter(s => matches(s,q));
+  const filtered = ALL.filter(s => matches(s,q) && (!CATFILTER || s.category === CATFILTER));
   countEl.textContent = t().count(filtered.length, ALL.length);
-  if(!ALL.length){ rootEl.innerHTML = '<div class="empty">'+t().none+'</div>'; return; }
-  if(!filtered.length){ rootEl.innerHTML = '<div class="empty">'+t().notfound(esc(q))+'</div>'; return; }
+  if(!ALL.length){ LAST_CATS = []; updateToggleAll(); rootEl.innerHTML = '<div class="empty">'+t().none+'</div>'; return; }
+  if(!filtered.length){ LAST_CATS = []; updateToggleAll(); rootEl.innerHTML = '<div class="empty">'+t().notfound(esc(q))+'</div>'; return; }
 
   let html = '';
   const favItems = filtered.filter(s => FAVS.has(s.id));
@@ -519,6 +625,7 @@ function render(){
   for(const s of filtered){ if(!byCat.has(s.category)) byCat.set(s.category,[]); byCat.get(s.category).push(s); }
   let cats = [...byCat.entries()];
   cats.sort((a,b)=> SORTBYCOUNT ? b[1].length-a[1].length : a[0].localeCompare(b[0]));
+  LAST_CATS = cats.map(c => c[0]);
   const forceOpen = q.length > 0;
   for(const [cat, items] of cats){
     const isCol = !forceOpen && collapsed.has(cat);
@@ -529,11 +636,22 @@ function render(){
     html += '</div></div>';
   }
   rootEl.innerHTML = html;
+  updateToggleAll();
+}
+
+// Global button label: shows "Collapse all" when any group is open,
+// "Expand all" when they are all collapsed.
+function updateToggleAll(){
+  const anyOpen = LAST_CATS.some(c => !collapsed.has(c));
+  toggleAllEl.textContent = anyOpen ? t().collapseAll : t().expandAll;
+  toggleAllEl.disabled = LAST_CATS.length === 0;
 }
 
 let CURRENT = null;
+let SHOWPT = false;   // is the detail panel showing the PT translation?
 function openDetail(s){
   CURRENT = s;
+  SHOWPT = false;
   dtitle.textContent = s.name;
   const tt = t();
   const targets = s.targets ? Object.keys(s.targets).filter(k => s.targets[k] === 'supported') : [];
@@ -544,7 +662,8 @@ function openDetail(s){
       '<div class="dname">'+esc(s.name)+riskBadge(s.risk)+'</div>'
     + '<div class="dmeta">'+tt.category+': '+esc(s.category)+(s.source?('  •  '+tt.source+': '+esc(s.source)):'')+'</div>'
     + '<div class="dsec">'+tt.descr+'</div>'
-    + '<div class="ddesc">'+(s.description?esc(s.description):tt.noDescr)+'</div>'
+    + '<div class="ddesc" id="d-desc">'+(s.description?esc(s.description):tt.noDescr)+'</div>'
+    + (s.description ? '<div class="btnrow"><button class="linklike" id="d-translate">'+(TRANS[s.id]?tt.showTranslation:tt.translate)+'</button></div>' : '')
     + (targets.length ? '<div class="dsec">'+tt.compat+'</div><div class="ddesc">'+targets.map(esc).join(' · ')+'</div>' : '')
     + '<div class="dsec">'+tt.setup+'</div><div class="ddesc">'+setupTxt+'</div>'
     + '<div class="dsec">'+tt.tool+'</div>'
@@ -563,7 +682,8 @@ function openDetail(s){
     +   '<button class="btn" id="d-en">'+tt.explainEn+'</button>'
     + '</div>'
     + '<div class="explainbox" id="d-explain" style="display:none"></div>'
-    + '<div class="btnrow"><button class="linklike" id="d-site">'+tt.site+'</button></div>';
+    + '<div class="btnrow"><button class="linklike" id="d-site">'+tt.site+'</button>'
+    +   '<button class="linklike" id="d-repo" style="margin-left:12px">'+tt.repo+'</button></div>';
   detailEl.classList.add('open');
   updatePreview(s);
   const ask = (lang) => {
@@ -571,6 +691,8 @@ function openDetail(s){
     if(box){ box.style.display='block'; box.className='explainbox'; box.textContent = t().thinking; }
     api.postMessage({type:'explain', id:s.id, lang});
   };
+  const trBtn = document.getElementById('d-translate');
+  if(trBtn) trBtn.onclick = () => toggleTranslate(s);
   document.getElementById('d-tool').onchange = (e) => { TOOL = e.target.value; updatePreview(s); api.postMessage({type:'setTool', tool:TOOL}); };
   document.getElementById('d-use').onclick  = () => api.postMessage({type:'use', id:s.id});
   document.getElementById('d-plan').onclick = () => api.postMessage({type:'use', variant:'plan', id:s.id});
@@ -578,6 +700,7 @@ function openDetail(s){
   document.getElementById('d-pt').onclick   = () => ask('pt');
   document.getElementById('d-en').onclick   = () => ask('en');
   document.getElementById('d-site').onclick = () => api.postMessage({type:'openSite'});
+  document.getElementById('d-repo').onclick = () => api.postMessage({type:'openRepo'});
 }
 
 function fillTpl(tpl, name){ return (tpl||'').replace(/\\{name\\}/g, name); }
@@ -588,6 +711,39 @@ function updatePreview(s){
   const tt = t();
   box.innerHTML = '<span class="lbl">'+tt.preview+'</span>'
     + esc(fillTpl(p.use, s.name)) + '\\n' + esc(fillTpl(p.plan, s.name));
+}
+
+// Toggles the description between original (EN) and translation (PT). Uses the
+// cache when present; otherwise asks the host, which translates via the editor
+// model and streams it back.
+function toggleTranslate(s){
+  const desc = document.getElementById('d-desc');
+  const btn = document.getElementById('d-translate');
+  if(!desc || !btn) return;
+  if(SHOWPT){
+    SHOWPT = false;
+    desc.textContent = s.description || t().noDescr;
+    btn.textContent = TRANS[s.id] ? t().showTranslation : t().translate;
+    return;
+  }
+  if(TRANS[s.id]){
+    SHOWPT = true;
+    desc.textContent = TRANS[s.id];
+    btn.textContent = t().showOriginal;
+    return;
+  }
+  btn.textContent = t().translating;
+  btn.disabled = true;
+  api.postMessage({type:'translate', id:s.id});
+}
+
+function renderTranslated(m){
+  if(!CURRENT || CURRENT.id !== m.id) return;
+  const desc = document.getElementById('d-desc');
+  const btn = document.getElementById('d-translate');
+  if(m.mode === 'unavailable'){ if(btn){ btn.disabled=false; btn.textContent=t().translateUnavailable; } return; }
+  if(m.text){ TRANS[m.id] = m.text; SHOWPT = true; if(desc) desc.textContent = m.text; }
+  if(btn && m.done){ btn.disabled=false; btn.textContent=t().showOriginal; }
 }
 
 function renderExplain(m){
@@ -641,7 +797,13 @@ function activate(context) {
       await provider.setFavorites([]);
       provider.postData();
       vscode.window.setStatusBarMessage('$(clear-all) Favoritos limpos', 3000);
-    })
+    }),
+    vscode.commands.registerCommand('antigravitySkills.openSite', () =>
+      vscode.env.openExternal(vscode.Uri.parse(SITE_URL))
+    ),
+    vscode.commands.registerCommand('antigravitySkills.openRepo', () =>
+      vscode.env.openExternal(vscode.Uri.parse(REPO_URL))
+    )
   );
 
   refreshFromRemote(context, { silent: true });
