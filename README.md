@@ -13,9 +13,22 @@
 
 > 🇧🇷 Português abaixo · 🇺🇸 English below
 
-Clique numa skill e a extensão digita a invocação certa no seu terminal/chat
-**sem executar** e copia pro clipboard. O formato se adapta à ferramenta que você
-usa — Claude Code (`/skill`), Cursor (`@skill`), Antigravity (`Use @skill`), e mais.
+> [!IMPORTANT]
+> Esta é uma extensão comunitária não oficial, mantida independentemente por
+> Franklyn Roberto da Silva. Ela não é afiliada, patrocinada ou endossada pelo
+> projeto Agentic Awesome Skills. A extensão consome os metadados públicos do
+> catálogo; ela não instala skills nem exibe os arquivos `SKILL.md`.
+>
+> This is an unofficial community extension maintained independently by
+> Franklyn Roberto da Silva. It is not affiliated with, sponsored by, or endorsed
+> by the Agentic Awesome Skills project. The extension consumes public catalog
+> metadata; it does not install skills or display the underlying `SKILL.md` files.
+
+Clique numa skill para copiar um texto de invocação configurável e escrevê-lo no
+terminal ativo (ou em um novo terminal "Antigravity"). O texto **não é enviado**
+por padrão; a extensão só pressiona Enter se `antigravitySkills.sendNewline`
+estiver ativado. A skill precisa já estar instalada e disponível na ferramenta
+selecionada.
 
 ---
 
@@ -25,14 +38,15 @@ usa — Claude Code (`/skill`), Cursor (`@skill`), Antigravity (`Use @skill`), e
 - 🔎 **Busca sempre visível** (nome, categoria, descrição; várias palavras).
 - 🗂️ Skills agrupadas por **categoria**, recolhíveis.
 - ⭐ **Favoritos** fixados no topo, persistidos entre sessões.
-- ℹ️ **Painel de detalhes** por skill: descrição, categoria, risco, fonte,
-  **compatibilidade** (codex/claude) e **instalação**.
+- ℹ️ **Painel de metadados** por skill: descrição, categoria, risco, fonte,
+  compatibilidade declarada (codex/claude) e resumo de configuração.
 - 🛠️ **Preset por ferramenta**: escolha sua ferramenta e veja um **preview** do
   texto exato que será inserido. Clique → insere no terminal + copia.
 - 🧩 Botão **Planejar feature** → insere a variante "to plan a feature".
 - 🌐 Botões **Explicar (PT)** / **Explain (EN)**: a explicação aparece **dentro do
-  painel** (via modelo do host) ou é enviada ao agente pelo terminal.
-- ⚠️ Badge de **risco** (safe / medium / high / critical) e 🔀 **toggle PT | EN**.
+  painel** via modelo do host; sem modelo, o prompt é escrito no terminal.
+- ⚠️ Badge para níveis de risco reconhecidos (safe / medium / high / critical) e
+  🔀 **toggle PT | EN**.
 
 ### Como cada ferramenta invoca uma skill
 Selecione a ferramenta no painel de detalhes (ou em `antigravitySkills.tool`).
@@ -75,21 +89,22 @@ Exemplo com a skill `brainstorming`:
 
 ## 🇺🇸 English
 
-Click a skill and the extension types the right invocation into your terminal/chat
-**without running it** and copies it to the clipboard. The format adapts to the
-tool you use — Claude Code (`/skill`), Cursor (`@skill`), Antigravity
-(`Use @skill`), and more.
+Click a skill to copy a configurable invocation string and write it to the active
+terminal (or a new "Antigravity" terminal). It is **not submitted** by default;
+the extension only presses Enter when `antigravitySkills.sendNewline` is enabled.
+The selected skill must already be installed and available to the target tool.
 
 ### Features
 - 🔎 Always-on **search** (name, category, description).
 - 🗂️ **Collapsible** categories · ⭐ **favorites** persisted across sessions.
-- ℹ️ Per-skill **detail panel**: description, category, risk, source,
-  **compatibility** (codex/claude) and **setup**.
+- ℹ️ Per-skill **metadata panel**: description, category, risk, source, declared
+  compatibility (codex/claude), and setup summary.
 - 🛠️ **Per-tool preset** with a live **preview** of the exact inserted text.
 - 🧩 **Plan a feature** button inserts the "to plan a feature" variant.
-- 🌐 **Explicar (PT)** / **Explain (EN)**: the explanation shows up **inside the
-  panel** (via the host model) or is sent to the terminal agent.
-- ⚠️ **Risk** badge and 🔀 **PT | EN** UI toggle.
+- 🌐 **Explicar (PT)** / **Explain (EN)**: the explanation appears **inside the
+  panel** through the host model; without one, the prompt is written to the terminal.
+- ⚠️ Badges for recognized risk levels (safe / medium / high / critical) and a
+  🔀 **PT | EN** UI toggle.
 
 Pick your tool in the detail panel (or `antigravitySkills.tool`) — see the table
 above for how each one invokes a skill.
@@ -101,6 +116,17 @@ above for how each one invokes a skill.
 ---
 
 Fonte dos dados / Data source: <https://sickn33.github.io/antigravity-awesome-skills>
+
+O código desta extensão usa a licença MIT. Metadados de catálogo e descrições
+traduzidas incluídos no pacote permanecem sujeitos às
+[licenças de conteúdo](https://github.com/sickn33/agentic-awesome-skills/blob/main/LICENSE-CONTENT)
+e ao [registro de atribuições](https://github.com/sickn33/agentic-awesome-skills/blob/main/docs/sources/sources.md)
+do projeto upstream.
+
+The extension code is MIT-licensed. Bundled catalog metadata and translated
+descriptions remain subject to the upstream
+[content licenses](https://github.com/sickn33/agentic-awesome-skills/blob/main/LICENSE-CONTENT)
+and [attribution ledger](https://github.com/sickn33/agentic-awesome-skills/blob/main/docs/sources/sources.md).
 
 Autor / Author: **Franklyn Roberto da Silva** — [@Franklyn-R-Silva](https://github.com/Franklyn-R-Silva)
 
