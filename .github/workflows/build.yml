@@ -1,16 +1,22 @@
 name: Build VSIX
 
 on:
+  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +28,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      - name: Check source and catalog
+        run: npm run check
 
       - name: Read version
         id: ver
@@ -38,10 +47,25 @@ jobs:
           path: antigravity-skills-browser-${{ steps.ver.outputs.version }}.vsix
           if-no-files-found: error
 
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download tested VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: antigravity-skills-browser-${{ needs.build.outputs.version }}
+
       - name: Check if release tag exists
         id: tag
         run: |
-          if git ls-remote --tags origin "refs/tags/v${{ steps.ver.outputs.version }}" | grep -q .; then
+          if git ls-remote --tags origin "refs/tags/v${{ needs.build.outputs.version }}" | grep -q .; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -51,7 +75,7 @@ jobs:
         if: steps.tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.ver.outputs.version }}
-          name: v${{ steps.ver.outputs.version }}
-          files: antigravity-skills-browser-${{ steps.ver.outputs.version }}.vsix
+          tag_name: v${{ needs.build.outputs.version }}
+          name: v${{ needs.build.outputs.version }}
+          files: antigravity-skills-browser-${{ needs.build.outputs.version }}.vsix
           generate_release_notes: true
