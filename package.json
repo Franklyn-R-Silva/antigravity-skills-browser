@@ -1,8 +1,8 @@
 {
   "name": "antigravity-skills-browser",
   "displayName": "Antigravity Skills Browser",
-  "description": "Navegue 1600+ Antigravity Awesome Skills por categoria, busque, favorite e insira 'use @skill' no terminal com um clique. | Browse 1600+ Antigravity Awesome Skills by category.",
-  "version": "1.7.0",
+  "description": "Navegue 1900+ Agentic Awesome Skills por categoria, busque, favorite e insira 'use @skill' no terminal com um clique. | Browse 1900+ Agentic Awesome Skills by category.",
+  "version": "1.8.0",
   "publisher": "Franklyn-R-Silva",
   "author": {
     "name": "Franklyn Roberto da Silva",
@@ -162,7 +162,7 @@
         },
         "antigravitySkills.dataUrl": {
           "type": "string",
-          "default": "https://sickn33.github.io/antigravity-awesome-skills/skills.json",
+          "default": "https://sickn33.github.io/agentic-awesome-skills/skills.json",
           "description": "URL do JSON com a lista de skills. Usado ao atualizar."
         },
         "antigravitySkills.sortCategoriesByCount": {
