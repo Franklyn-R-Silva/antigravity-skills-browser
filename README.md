@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="media/icon.png" width="120" alt="Antigravity Skills Browser" />
+<img src="https://github.com/Franklyn-R-Silva/antigravity-skills-browser/raw/HEAD/media/icon.png" width="120" alt="Antigravity Skills Browser" />
 
 # Antigravity Skills Browser
 
-**Navegue, busque e insira 1600+ Antigravity Awesome Skills direto da barra lateral.**
-*Browse, search and insert 1600+ Antigravity Awesome Skills right from the sidebar.*
+**Navegue, busque e insira 1900+ Agentic Awesome Skills direto da barra lateral.**
+*Browse, search and insert 1900+ Agentic Awesome Skills right from the sidebar.*
 
 🔎 Busca · ⭐ Favoritos · ℹ️ Detalhes · 🧩 Planejar feature · 🛠️ Presets por ferramenta · 🌐 Explicação PT/EN por IA · 🔀 UI PT|EN
 
@@ -100,16 +100,16 @@ above for how each one invokes a skill.
 
 ---
 
-Fonte dos dados / Data source: <https://sickn33.github.io/antigravity-awesome-skills>
+Fonte dos dados / Data source: <https://sickn33.github.io/agentic-awesome-skills>
 
 Autor / Author: **Franklyn Roberto da Silva** — [@Franklyn-R-Silva](https://github.com/Franklyn-R-Silva)
 
-Contribuições são bem-vindas! Veja [`CONTRIBUTING.md`](CONTRIBUTING.md) ·
-[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) · [`SECURITY.md`](SECURITY.md).
+Contribuições são bem-vindas! Veja [`CONTRIBUTING.md`](https://github.com/Franklyn-R-Silva/antigravity-skills-browser/blob/HEAD/CONTRIBUTING.md) ·
+[`CODE_OF_CONDUCT.md`](https://github.com/Franklyn-R-Silva/antigravity-skills-browser/blob/HEAD/CODE_OF_CONDUCT.md) · [`SECURITY.md`](https://github.com/Franklyn-R-Silva/antigravity-skills-browser/blob/HEAD/SECURITY.md).
 Contributions welcome — see the same files.
 
-Build, empacotamento e publicação: veja [`DEVELOPMENT.md`](DEVELOPMENT.md).
-Build, packaging and publishing: see [`DEVELOPMENT.md`](DEVELOPMENT.md).
+Build, empacotamento e publicação: veja [`DEVELOPMENT.md`](https://github.com/Franklyn-R-Silva/antigravity-skills-browser/blob/HEAD/DEVELOPMENT.md).
+Build, packaging and publishing: see [`DEVELOPMENT.md`](https://github.com/Franklyn-R-Silva/antigravity-skills-browser/blob/HEAD/DEVELOPMENT.md).
 
 ## Licença / License
 MIT © 2026 Franklyn Roberto da Silva
