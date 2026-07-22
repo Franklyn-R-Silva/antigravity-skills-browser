@@ -3,8 +3,8 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const SITE_URL = 'https://sickn33.github.io/antigravity-awesome-skills/';
-const REPO_URL = 'https://github.com/sickn33/antigravity-awesome-skills';
+const SITE_URL = 'https://sickn33.github.io/agentic-awesome-skills/';
+const REPO_URL = 'https://github.com/sickn33/agentic-awesome-skills';
 
 /** @type {Array<any>} */
 let SKILLS = [];
@@ -556,7 +556,10 @@ const CATPT = {
   'test-automation':'Automação de testes','testing':'Testes','tool-quality':'Qualidade de ferramentas',
   'tools':'Ferramentas','uncategorized':'Sem categoria','voice-agents':'Agentes de voz',
   'web-development':'Desenvolvimento web','workflow':'Fluxo de trabalho','workflow-bundle':'Pacote de fluxos',
-  'writing':'Escrita'
+  'writing':'Escrita',
+  'agent-evaluation':'Avaliação de agentes','ai':'IA','consulting':'Consultoria',
+  'databases':'Bancos de dados','knowledge-management':'Gestão de conhecimento','ml-ops':'ML Ops',
+  'operations':'Operações','product':'Produto','skill-authoring':'Criação de skills','video':'Vídeo'
 };
 function catLabel(c){ return (LANG === 'pt' && CATPT[c]) ? CATPT[c] : c; }
 // Description to show given the current language: bundled/on-demand PT when in

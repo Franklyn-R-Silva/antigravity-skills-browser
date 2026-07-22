@@ -5,6 +5,20 @@ All notable changes to this extension are documented here.
 The format is based on
 [Keep a Changelog](https://keepachangelog.com/) · [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] - 2026-07-13
+
+**Changed**
+- ⬆️ **Updated skill catalog to 1948 skills** (302 new) from the upstream dataset,
+  which was renamed from `antigravity-awesome-skills` to
+  **`agentic-awesome-skills`**. Refreshed the bundled `skills.json`, the default
+  `antigravitySkills.dataUrl`, and the site/repo links (`SITE_URL`, `REPO_URL`)
+  to the new location.
+- 🇧🇷 Extended the offline Portuguese bundle (`skills-pt.json`) with pre-translated
+  descriptions for all 302 new skills.
+- 🗂️ Added Portuguese labels for 10 new categories (`agent-evaluation`, `ai`,
+  `consulting`, `databases`, `knowledge-management`, `ml-ops`, `operations`,
+  `product`, `skill-authoring`, `video`).
+
 ## [1.7.0] - 2026-07-08
 
 **Changed**
